@@ -24,11 +24,12 @@ def decision(value, split, discrete=False):
 
 
 class node:
-	def __init__(self, split, attr_index, is_leaf = False, children = []):
-		self.split = split;
-		self.attr_index = attr_index;
+	def __init__(self, is_leaf = False, children = []):
+		self.split = -1;
+		self.attr_index = -1;
 		self.children = children;
 		self.is_leaf = is_leaf;
+		self.value = None;
 
 	def add_child(self, child):
 		self.children.append(child)
@@ -47,7 +48,7 @@ def make_array(x):
 def datatype(data):
 	return map(make_array, data);
 
-def get_best_split(data, classes, is_discrete_attr):
+def get_best_split(data, classes):
 	# indices = np.array(data.shape);
 	splits = [[0 for i in is_discrete_attr] for j in xrange(len(data))];
 
@@ -55,6 +56,7 @@ def get_best_split(data, classes, is_discrete_attr):
 	best_split = 0;
 	split_index = -1;
 	for i in xrange(len(is_discrete_attr)):
+		print i
 		x = extract_column(data, i);
 		if not is_discrete_attr[i]:
 			x = map(float, x);
@@ -64,8 +66,8 @@ def get_best_split(data, classes, is_discrete_attr):
 		I1 = len([(k, l) for (k, l) in zip(x, y) if l == '1' ])
 		I2 = len([(k, l) for (k, l) in zip(x, y) if l == '0' ])
 		information = gini_index((I1, I2))
-		for j in x:
-			# print j
+		for j in set(x):
+			print j
 			pL1 = len([(k, l) for (k, l) in zip(x, y) if decision(k, j, is_discrete_attr[i]) and l == '1' ])
 			pL2 = len([(k, l) for (k, l) in zip(x, y) if decision(k, j, is_discrete_attr[i]) and l == '0' ])
 			pR1 = len([(k, l) for (k, l) in zip(x, y) if not decision(k, j, is_discrete_attr[i]) and l == '1' ])
@@ -76,6 +78,7 @@ def get_best_split(data, classes, is_discrete_attr):
 				max_info_gain = curr_info_gain
 				best_split = j
 				split_index = i
+				print max_info_gain, best_split, split_index
 	
 	return max_info_gain, best_split, split_index
 
@@ -91,27 +94,61 @@ def gini_index(P):
 	P = [float(x)/sum(P) for x in P]
 	return 0.5 * (1 - sum([x**2 for x in P]))
 
-def split_data(data, arr_index, split):
+def split_data(data, classes, arr_index, split):
+	z = zip(data, classes)
 	if is_discrete_attr[arr_index]:
-		return [x for x in data if x[arr_index] == split], [x for x in data if x[arr_index] != split]
-	return [x for x in data if float(x[arr_index]) <= split], [x for x in data if float(x[arr_index]) > split] 
+		total_data_l = [(x, y) for (x, y) in z if x[arr_index] == split]
+		total_data_r = [(x, y) for (x, y) in z if x[arr_index] != split]
+	else:
+		total_data_l = [(x, y) for (x, y) in z if float(x[arr_index]) <= split]
+		total_data_r = [(x, y) for (x, y) in z if float(x[arr_index]) > split]
+	data_l = [x for (x, y) in total_data_l]
+	class_l = [y for (x, y) in total_data_l]
+	data_r = [x for (x, y) in total_data_r]
+	class_r = [y for (x, y) in total_data_r]
+	return data_l, class_l, data_r, class_r
 
-def make_tree(data, root):
-	print 'tree is grwing'
+def make_tree(data, classes, root):
+	print len(data)
+	if len(data) > 5 and classes.count('0') != len(data) and classes.count('1') != len(data):
+		gain, root.split, root.attr_index = get_best_split(data, classes)
+		print gain ,root.split, root.attr_index
+		left_child = node()
+		right_child = node()
+		root.children = [left_child, right_child]
+		data_l, class_l, data_r, class_r =  split_data(data, classes, root.attr_index, root.split)
+		make_tree(data_l, class_l, left_child)
+		make_tree(data_r, class_r, right_child)
+	else:
+		# print data
+		root.is_leaf = True;
+		root.value = max(classes, key = classes.count)
 
+def validate(data, classes, root):
+	print data[:5]
+	print classes[:5]
+	print 'validating'
 
 if __name__ == '__main__':
+	train_data_percent = .7;
+
 	data = get_dataset('decision_tree_train.csv');
 	data.pop(0);
-	data = data[:100];
 	data = datatype(data);
-	classes = extract_column(data, -4);
-	is_discrete_attr = [not is_number(x) for x in data[0]];
-	gain, split, arr_index = get_best_split(data, classes, is_discrete_attr)
-	root = node(split, arr_index)
-	make_tree(data, root)
-	print is_discrete_attr
-	print split_data(data, 6, 0.0)[0]
-	print '-----------------------'
-	print split_data(data, 6, 0.0)[1]
-
+	train_data = data[:int(len(data)* train_data_percent) ]
+	train_class = extract_column(train_data, -4, True)
+	validate_data = data[int(len(data) * train_data_percent):]
+	validate_class = extract_column(validate_data, -4, True)
+	
+	is_discrete_attr = [not is_number(x) for x in train_data[0]];
+	# print get_best_split(data, classes, is_discrete_attr)
+	# print data;
+	# print classes;
+	root = node()
+	# make_tree(train_data, train_classes, root)
+	validate(validate_data, validate_class, root)
+	# print get_best_split(data, classes)
+	# a, b, c, d = split_data(data, classes, 6, 0.0)
+	# print c, d
+	# print get_best_split(a, b)
+	
