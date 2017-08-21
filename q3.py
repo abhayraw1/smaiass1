@@ -73,8 +73,8 @@ def get_best_split(data, classes):
 			pR1 = len([(k, l) for (k, l) in zip(x, y) if not decision(k, j, is_discrete_attr[i]) and l == '1' ])
  			pR2 = len([(k, l) for (k, l) in zip(x, y) if not decision(k, j, is_discrete_attr[i]) and l == '0' ])
  			curr_info_gain = info_gain((pL1, pL2),(pR1, pR2), information)
- 			# print curr_info_gain, '<<<<<<<<<<,'
-			if curr_info_gain > max_info_gain:
+ 			
+ 			if curr_info_gain > max_info_gain:
 				max_info_gain = curr_info_gain
 				best_split = j
 				split_index = i
@@ -124,10 +124,30 @@ def make_tree(data, classes, root):
 		root.is_leaf = True;
 		root.value = max(classes, key = classes.count)
 
+def classify_vector(vector, node):
+	if node.is_leaf:
+		return node.value;
+	else:
+		if is_discrete_attr[node.attr_index] and vector[node.attr_index] == node.split:
+			child = node.children[0]
+		elif not is_discrete_attr[node.attr_index] and float(vector[node.attr_index]) <= node.split:
+			child = node.children[0]
+		else:
+			child = node.children[1]
+		return classify_vector(vector, child)
+
+
 def validate(data, classes, root):
-	print data[:5]
-	print classes[:5]
-	print 'validating'
+	print data[:15]
+	print classes[:15]
+	hit = 0;
+	miss = 0;
+	for (i, j) in zip(data, classes):
+		if classify_vector(i, root) == j:
+			hit += 1
+		else:
+			miss += 1
+	print hit, miss
 
 if __name__ == '__main__':
 	train_data_percent = .7;
@@ -145,7 +165,7 @@ if __name__ == '__main__':
 	# print data;
 	# print classes;
 	root = node()
-	# make_tree(train_data, train_classes, root)
+	make_tree(train_data, train_class, root)
 	validate(validate_data, validate_class, root)
 	# print get_best_split(data, classes)
 	# a, b, c, d = split_data(data, classes, 6, 0.0)
