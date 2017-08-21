@@ -29,7 +29,6 @@ while flag:
 	flag = 0;
 	if (not in_dev and c > 1000):
 		break;
-	# print c, bias;
 
 	for i in data_sets:
 		c+=1;
