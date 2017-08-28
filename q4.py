@@ -54,6 +54,51 @@ def build_matrix(authors, bow):
 		v = gen_word_vector(bow[words[i]], authors, words[i])
 		mat[:, i] = np.matrix(v, dtype=np.float64).transpose()
 	return mat, words
+# ----------------------------------------
+
+def distance(v,u):
+	v=v.transpose()
+	u=u.transpose()
+	normalise=np.sum(v)
+	dist=np.linalg.norm(v-u)/normalise
+	for i in range(0,v.shape[0]):
+		for j in range(0,v.shape[0]):
+			if i!=j:
+				dist+=np.sqrt(v[i]*v[j] - u[i]*u[j])/(2*normalise)
+	return dist
+
+
+def similarity(u,Authors,Mtrx):
+	min_dist=distance(Mtrx(0,:),u)
+	indx=0
+	for i in range(len(Authors)):
+		temp=distance(Mtrx(i,:),u)
+		if temp<min_dist:
+			indx=i
+			min_dist=temp
+	return indx
+
+
+def Test(doc,dictonary):
+	name="test_doc"
+	temp_dictionary=dictionary.copy()
+
+	doc=get_words(doc)
+	for term in doc:
+		if temp_dictionary.has_key(term):
+			add(temp_dictionary,term,name)
+
+	u=np.matrix(np.zeros(1,len(temp_dictionary)))
+	i=0
+	for term in temp_dictionary.values():
+		if term.has_key(name):
+			u[0,i]=term.get(name, default=None)
+		i=i+1
+
+	ind=similarity(u)
+	return ind
+# -------------------------------------
+
 
 if __name__ == "__main__":
 	authors, files = get_file_names(os.path.join(os.getcwd(), 'datasets/q4/train'))
