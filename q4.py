@@ -16,7 +16,16 @@ def get_file_names(path):
 
 	return list_auth, list_files
 
-def build_dictionary():
+def get_words(file):
+	return open(file, 'r').read().replace('\n', '').replace('<s> ', '').replace('<\s>', '').split(' ');
+
+def build_dictionary(authors, files):
+	dict = {}
+	for i in range(len(files)):
+		for j in files[i]:
+			words = get_words(j)
 
 if __name__ == "__main__":
 	authors, files = get_file_names(os.path.join(os.getcwd(), 'datasets/q4/train'))
+	build_dictionary(authors, files)
+	
