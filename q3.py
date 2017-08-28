@@ -110,7 +110,7 @@ def split_data(data, classes, arr_index, split):
 
 def make_tree(data, classes, root):
 	print len(data)
-	if len(data) > 5 and classes.count('0') != len(data) and classes.count('1') != len(data):
+	if len(data) > 5 and gini_index((classes.count('0') ,classes.count('1'))) >=0.025:
 		gain, root.split, root.attr_index = get_best_split(data, classes)
 		print gain ,root.split, root.attr_index
 		left_child = node()
@@ -150,14 +150,16 @@ def validate(data, classes, root):
 	print hit, miss
 
 if __name__ == '__main__':
-	train_data_percent = .7;
+	train_data_percent = 1;
 
 	data = get_dataset('decision_tree_train.csv');
 	data.pop(0);
 	data = datatype(data);
 	train_data = data[:int(len(data)* train_data_percent) ]
 	train_class = extract_column(train_data, -4, True)
-	validate_data = data[int(len(data) * train_data_percent):]
+	validate_data = get_dataset('q3_test.csv')
+	validate_data.pop(0)
+	validate_data = datatype(validate_data)
 	validate_class = extract_column(validate_data, -4, True)
 	
 	is_discrete_attr = [not is_number(x) for x in train_data[0]];
